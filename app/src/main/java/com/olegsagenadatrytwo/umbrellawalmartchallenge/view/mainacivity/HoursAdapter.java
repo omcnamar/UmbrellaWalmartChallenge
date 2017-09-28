@@ -27,6 +27,8 @@ class HoursAdapter extends RecyclerView.Adapter<HoursAdapter.ViewHolder> {
     private int positionWithHighTemp = 0;
     private int positionWithLowTemp;
     private static HashMap<String, String> icons = new HashMap<>();
+
+    //icons
     static {
         icons.put("chanceflurries",String.valueOf(R.string.wi_snow));
         icons.put("chancerain",String.valueOf(R.string.wi_rain));
@@ -49,6 +51,7 @@ class HoursAdapter extends RecyclerView.Adapter<HoursAdapter.ViewHolder> {
         icons.put("unknown",String.valueOf(R.string.wi_na));
     }
 
+    //constructor
     HoursAdapter(List<HourlyForecast> list, Context context, String fOrC) {
         this.list = list;
         this.context = context;

@@ -9,7 +9,7 @@ import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.H
  * Created by omcna on 9/28/2017.
  */
 
-public interface MainActivityContract {
+interface MainActivityContract {
 
     interface View extends BaseView {
         void weatherDownloadedUpdateUI(WeatherInfo weatherInfo, String fOrC);

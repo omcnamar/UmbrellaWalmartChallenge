@@ -19,6 +19,9 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.crashlytics.android.Crashlytics;
+import com.crashlytics.android.answers.Answers;
+import com.crashlytics.android.answers.ContentViewEvent;
 import com.flurry.android.FlurryAgent;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.R;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.custom.DayData;
@@ -27,13 +30,20 @@ import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.H
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.HourlyWeatherInfo;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import io.fabric.sdk.android.Fabric;
 
 public class MainActivity extends AppCompatActivity implements MainActivityContract.View {
 
+    //constants
     private static final String SETTINGS_PREF_FILE = "settings";
     private static final String CURRENT_SETTING = "F/C";
     private static final String ZIP_CODE = "zip_code";
+
+    //presenter
     private MainActivityPresenter presenter;
 
     //views for toolbar
@@ -49,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //Fabric.with(this, new Crashlytics());
+        Fabric.with(this, new Answers(), new Crashlytics());
         setContentView(R.layout.activity_main);
 
         //action bar set up
@@ -99,6 +109,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 presenter.downloadWeatherDataHourly(zipCode, fahrenheitOrCelsius);
             }
         }
+
         //set up Flurry
         new FlurryAgent.Builder()
                 .withLogEnabled(true)
@@ -125,18 +136,18 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
             case R.id.action_settings + 1:
                 showZipCodeDialog("");
                 //answers log
-//                Answers.getInstance().logContentView(new ContentViewEvent()
-//                        .putContentName("BtnZipCodeClicked")
-//                        .putContentType("action button clicked")
-//                        .putContentId(R.id.action_settings + 1 + "")
-//                        .putCustomAttribute("Favorites Count", 20)
-//                        .putCustomAttribute("Screen Orientation", "Portrait"));
-//
-//                //flurry
-//                Map<String, String> eventParams = new HashMap<>();
-//                eventParams.put("event", "click");
-//                eventParams.put("value", "zip code");
-//                FlurryAgent.logEvent("Button clicked for Flurry test", eventParams);
+                Answers.getInstance().logContentView(new ContentViewEvent()
+                        .putContentName("BtnZipCodeClicked")
+                        .putContentType("action button clicked")
+                        .putContentId(R.id.action_settings + 1 + "")
+                        .putCustomAttribute("Favorites Count", 20)
+                        .putCustomAttribute("Screen Orientation", "Portrait"));
+
+                //flurry
+                Map<String, String> eventParams = new HashMap<>();
+                eventParams.put("event", "click");
+                eventParams.put("value", "zip code");
+                FlurryAgent.logEvent("Button clicked for Flurry test", eventParams);
                 break;
 
             //case to change from F to C or from C to F
@@ -165,18 +176,18 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 }
 
                 // answers log
-//                Answers.getInstance().logContentView(new ContentViewEvent()
-//                        .putContentName("BtnUnitsClicked")
-//                        .putContentType("action button clicked")
-//                        .putContentId(R.id.action_settings + 2 + "")
-//                        .putCustomAttribute("Favorites Count", 20)
-//                        .putCustomAttribute("Screen Orientation", "Portrait"));
-//
-//                //flurry log
-//                Map<String, String> eventParams2 = new HashMap<>();
-//                eventParams2.put("event", "click");
-//                eventParams2.put("value", "ForC");
-//                FlurryAgent.logEvent("Button clicked for Flurry test", eventParams2);
+                Answers.getInstance().logContentView(new ContentViewEvent()
+                        .putContentName("BtnUnitsClicked")
+                        .putContentType("action button clicked")
+                        .putContentId(R.id.action_settings + 2 + "")
+                        .putCustomAttribute("Favorites Count", 20)
+                        .putCustomAttribute("Screen Orientation", "Portrait"));
+
+                //flurry log
+                Map<String, String> eventParams2 = new HashMap<>();
+                eventParams2.put("event", "click");
+                eventParams2.put("value", "ForC");
+                FlurryAgent.logEvent("Button clicked for Flurry test", eventParams2);
 
                 break;
 
