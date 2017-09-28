@@ -13,7 +13,6 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:textColor="@color/colorBlack"
-        android:text="100\u00B0"
         android:textSize="60sp"/>
 
     <TextView
@@ -22,7 +21,6 @@
         android:layout_height="wrap_content"
         android:textColor="@color/colorBlack"
         android:gravity="center"
-        android:text="Clear"
         android:textSize="20sp"/>
 
 </LinearLayout>

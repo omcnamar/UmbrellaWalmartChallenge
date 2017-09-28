@@ -222,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 dialog.dismiss();
             }
         });
+        dialog.setCanceledOnTouchOutside(false);
         dialog.show();
     }
 
