@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:custom="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/tvTime"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@color/colorBlack"
+        android:text="14:00 PM"
+        android:gravity="center"
+        android:layout_weight="1"
+        android:textSize="10sp"/>
+
+    <com.github.pwittchen.weathericonview.WeatherIconView
+        android:id="@+id/my_weather_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        custom:weatherIconResource="@string/wi_day_sunny_overcast"
+        custom:weatherIconColor="@android:color/black"
+        android:layout_gravity="center"
+        custom:weatherIconSize="10" />
+
+    <TextView
+        android:id="@+id/tvTemperature"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:textColor="@color/colorBlack"
+        android:layout_weight="1"
+        android:text="30"
+        android:gravity="center"
+        android:paddingBottom="16dp"
+        android:textSize="20sp"/>
+
+
+
+</LinearLayout>
