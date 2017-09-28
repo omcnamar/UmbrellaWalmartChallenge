@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -62,27 +63,26 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
         Fabric.with(this, new Answers(), new Crashlytics());
         setContentView(R.layout.activity_main);
 
-        //action bar set up
-        LinearLayout includeView = (LinearLayout) findViewById(R.id.toolbar_header_view);
-        tvTemperature = (TextView) includeView.findViewById(R.id.tvTemperatureTop);
-        tvCondition = (TextView) includeView.findViewById(R.id.tvConditionTop);
-        toolBarHeaderViewLinearLayout = (LinearLayout) includeView.findViewById(R.id.toolbar_header_view);
-        myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
+        actionBarSetUp();
+        recyclerViewSetUp();
+        presenterSetUp();
+        initSharedPreferenceSettings();
+        setUpFlurry();
+    }
 
-        //recycler view set up
-        rvDays = (RecyclerView) findViewById(R.id.rvDays);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        RecyclerView.ItemAnimator itemAnimator = new DefaultItemAnimator();
-        rvDays.setLayoutManager(layoutManager);
-        rvDays.setItemAnimator(itemAnimator);
+    /**
+     * set up Flurry
+     */
+    private void setUpFlurry() {
+        new FlurryAgent.Builder()
+                .withLogEnabled(true)
+                .build(this, "CG256N5PW5DKT5F4QD58");
+    }
 
-        //presenter set up
-        presenter = new MainActivityPresenter();
-        presenter.attachView(this);
-        presenter.setContext(this);
-
-        //get the settings from sharedPreference
+    /**
+     * get the settings from sharedPreference
+     */
+    private void initSharedPreferenceSettings() {
         SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
         String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
 
@@ -109,11 +109,38 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 presenter.downloadWeatherDataHourly(zipCode, fahrenheitOrCelsius);
             }
         }
+    }
 
-        //set up Flurry
-        new FlurryAgent.Builder()
-                .withLogEnabled(true)
-                .build(this, "CG256N5PW5DKT5F4QD58");
+    /**
+     * presenter set up
+     */
+    private void presenterSetUp() {
+        presenter = new MainActivityPresenter();
+        presenter.attachView(this);
+        presenter.setContext(this);
+    }
+
+    /**
+     * recycler view set up
+     */
+    private void recyclerViewSetUp() {
+        rvDays = (RecyclerView) findViewById(R.id.rvDays);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        RecyclerView.ItemAnimator itemAnimator = new DefaultItemAnimator();
+        rvDays.setLayoutManager(layoutManager);
+        rvDays.setItemAnimator(itemAnimator);
+    }
+
+    /**
+     * action bar set up
+     */
+    private void actionBarSetUp() {
+        LinearLayout includeView = (LinearLayout) findViewById(R.id.toolbar_header_view);
+        tvTemperature = (TextView) includeView.findViewById(R.id.tvTemperatureTop);
+        tvCondition = (TextView) includeView.findViewById(R.id.tvConditionTop);
+        toolBarHeaderViewLinearLayout = (LinearLayout) includeView.findViewById(R.id.toolbar_header_view);
+        myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        setSupportActionBar(myToolbar);
     }
 
     /**
@@ -261,11 +288,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                     //change the color of toolbar based on current temperature
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         if (weatherInfo.getCurrentObservation().getTempF() > 60) {
-                            toolBarHeaderViewLinearLayout.setBackgroundColor(getColor(R.color.colorAccent));
-                            myToolbar.setBackgroundColor(getColor(R.color.colorAccent));
+                            toolBarHeaderViewLinearLayout.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
+                            myToolbar.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.colorAccent));
                         } else {
-                            toolBarHeaderViewLinearLayout.setBackgroundColor(getColor(R.color.colorPrimary));
-                            myToolbar.setBackgroundColor(getColor(R.color.colorPrimary));
+                            toolBarHeaderViewLinearLayout.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
+                            myToolbar.setBackgroundColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary));
                         }
                     }
                 }
