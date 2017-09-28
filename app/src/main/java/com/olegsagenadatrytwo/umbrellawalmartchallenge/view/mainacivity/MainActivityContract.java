@@ -12,12 +12,12 @@ import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.H
 interface MainActivityContract {
 
     interface View extends BaseView {
-        void weatherDownloadedUpdateUI(WeatherInfo weatherInfo, String fOrC);
-        void hourlyWeatherDownloadedUpdateUI(HourlyWeatherInfo hourlyWeatherInfo, String fOrC);
+        void weatherDownloadedUpdateUI(WeatherInfo weatherInfo);
+        void hourlyWeatherDownloadedUpdateUI(HourlyWeatherInfo hourlyWeatherInfo);
     }
 
     interface Presenter extends BasePresenter<View> {
-        void downloadWeatherData(String zipCode, final String fOrC);
-        void downloadWeatherDataHourly(String zipCode, final String fOrC);
+        void downloadWeatherData(String zipCode);
+        void downloadWeatherDataHourly(String zipCode);
     }
 }

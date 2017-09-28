@@ -47,7 +47,7 @@ class MainActivityPresenter implements MainActivityContract.Presenter {
 
     /**method that downloads data from weather channel*/
     @Override
-    public void downloadWeatherData(String zipCode, final String fOrC){
+    public void downloadWeatherData(String zipCode){
 
         //make request to get the data
         final OkHttpClient okHttpClient;
@@ -77,7 +77,7 @@ class MainActivityPresenter implements MainActivityContract.Presenter {
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 Gson gson = new Gson();
                 weatherInfo = gson.fromJson(response.body().string(), WeatherInfo.class);
-                view.weatherDownloadedUpdateUI(weatherInfo, fOrC);
+                view.weatherDownloadedUpdateUI(weatherInfo);
             }
         });
 
@@ -85,7 +85,7 @@ class MainActivityPresenter implements MainActivityContract.Presenter {
 
     //method that downloads data from weather channel
     @Override
-    public void downloadWeatherDataHourly(String zipCode, final String fOrC){
+    public void downloadWeatherDataHourly(String zipCode){
 
         //make request to get the l
         final OkHttpClient okHttpClient;
@@ -114,9 +114,8 @@ class MainActivityPresenter implements MainActivityContract.Presenter {
             @Override
             public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
                 Gson gson = new Gson();
-                //Log.d(TAG, "onResponse: " + response.body().string());
                 hourlyWeatherInfo = gson.fromJson(response.body().string(), HourlyWeatherInfo.class);
-                view.hourlyWeatherDownloadedUpdateUI(hourlyWeatherInfo, fOrC);
+                view.hourlyWeatherDownloadedUpdateUI(hourlyWeatherInfo);
             }
         });
 

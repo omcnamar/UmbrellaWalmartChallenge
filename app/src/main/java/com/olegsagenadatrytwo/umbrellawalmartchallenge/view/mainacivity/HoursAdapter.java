@@ -106,7 +106,7 @@ class HoursAdapter extends RecyclerView.Adapter<HoursAdapter.ViewHolder> {
         }
 
         //set the temperature text
-        if (fOrC.equals("F")) {
+        if (fOrC.equals(context.getString(R.string.fahrenheit))) {
             String temperature = list.get(position).getTemp().getEnglish();
             String temperatureWithDegreeSign = temperature + context.getString(R.string.degree);
             holder.tvTemp.setText(temperatureWithDegreeSign);

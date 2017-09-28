@@ -8,16 +8,7 @@
         android:orderInCategory="100"
         android:icon="@drawable/ic_settings"
         app:showAsAction="always"
-        android:title="zip code">
-        <menu>
-            <item
-                android:id="@+id/action_zip_code"
-                android:title="zip code"
-                app:itemTextColor="@color/colorAccent"/>
-            <item
-                android:id="@+id/submenu2"
-                android:title="change to C°/F°" />
-        </menu>
+        android:title="@string/settings">
 
     </item>
 

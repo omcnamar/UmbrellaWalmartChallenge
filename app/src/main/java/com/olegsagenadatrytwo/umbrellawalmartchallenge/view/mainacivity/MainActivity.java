@@ -2,6 +2,7 @@ package com.olegsagenadatrytwo.umbrellawalmartchallenge.view.mainacivity;
 
 import android.app.Dialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
@@ -29,6 +30,7 @@ import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.custom.DayData;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfo.WeatherInfo;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.HourlyForecast;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.HourlyWeatherInfo;
+import com.olegsagenadatrytwo.umbrellawalmartchallenge.view.settingsactivity.SettingsActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     private static final String SETTINGS_PREF_FILE = "settings";
     private static final String CURRENT_SETTING = "F/C";
     private static final String ZIP_CODE = "zip_code";
+    private static final int SETTINGS_REQUEST = 1;
 
     //presenter
     private MainActivityPresenter presenter;
@@ -53,9 +56,15 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     private Toolbar myToolbar;
     private LinearLayout toolBarHeaderViewLinearLayout;
 
-    //recycler view and needed objects
+    //recycler view
     private RecyclerView rvDays;
     private DaysAdapter adapter;
+
+    //global weather data variables to avoid API calls
+    private WeatherInfo weatherInfo;
+    private HourlyWeatherInfo hourlyWeatherInfo;
+    private String globalZipCode;
+    private String globalFOrC;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,70 +74,9 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
 
         actionBarSetUp();
         recyclerViewSetUp();
-        presenterSetUp();
         initSharedPreferenceSettings();
         setUpFlurry();
-    }
-
-    /**
-     * set up Flurry
-     */
-    private void setUpFlurry() {
-        new FlurryAgent.Builder()
-                .withLogEnabled(true)
-                .build(this, "CG256N5PW5DKT5F4QD58");
-    }
-
-    /**
-     * get the settings from sharedPreference
-     */
-    private void initSharedPreferenceSettings() {
-        SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
-        String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
-
-        //if there was no current settings for temperature make fahrenheit the default
-        if (fahrenheitOrCelsius.equals("default")) {
-            SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString(CURRENT_SETTING, "F");
-            editor.apply();
-            String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
-            //if there was no zip code show the dialog for zip code
-            if (zipCode.equals("default")) {
-                showZipCodeDialog("");
-            } else { // if there was a zip code download the weather data
-                presenter.downloadWeatherData(zipCode, "F");
-                presenter.downloadWeatherDataHourly(zipCode, "F");
-            }
-
-        } else { //if settings were already configured use them to download weather data
-            String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
-            if (zipCode.equals("default")) {
-                showZipCodeDialog("");
-            } else {
-                presenter.downloadWeatherData(zipCode, fahrenheitOrCelsius);
-                presenter.downloadWeatherDataHourly(zipCode, fahrenheitOrCelsius);
-            }
-        }
-    }
-
-    /**
-     * presenter set up
-     */
-    private void presenterSetUp() {
-        presenter = new MainActivityPresenter();
-        presenter.attachView(this);
-        presenter.setContext(this);
-    }
-
-    /**
-     * recycler view set up
-     */
-    private void recyclerViewSetUp() {
-        rvDays = (RecyclerView) findViewById(R.id.rvDays);
-        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-        RecyclerView.ItemAnimator itemAnimator = new DefaultItemAnimator();
-        rvDays.setLayoutManager(layoutManager);
-        rvDays.setItemAnimator(itemAnimator);
+        presenterSetUp();
     }
 
     /**
@@ -140,11 +88,12 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
         tvCondition = (TextView) includeView.findViewById(R.id.tvConditionTop);
         toolBarHeaderViewLinearLayout = (LinearLayout) includeView.findViewById(R.id.toolbar_header_view);
         myToolbar = (Toolbar) findViewById(R.id.my_toolbar);
+        myToolbar.setTitleTextColor(ContextCompat.getColor(getApplicationContext(), R.color.colorWhite));
         setSupportActionBar(myToolbar);
     }
 
     /**
-     * create action bar
+     * create options menu
      */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -160,62 +109,22 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             //case for zip code change
-            case R.id.action_settings + 1:
-                showZipCodeDialog("");
+            case R.id.action_settings:
+                Intent settings = new Intent(this, SettingsActivity.class);
+                startActivityForResult(settings, SETTINGS_REQUEST);
                 //answers log
                 Answers.getInstance().logContentView(new ContentViewEvent()
-                        .putContentName("BtnZipCodeClicked")
+                        .putContentName("BtnSettingsClicked")
                         .putContentType("action button clicked")
-                        .putContentId(R.id.action_settings + 1 + "")
+                        .putContentId(R.id.action_settings + "")
                         .putCustomAttribute("Favorites Count", 20)
                         .putCustomAttribute("Screen Orientation", "Portrait"));
 
                 //flurry
                 Map<String, String> eventParams = new HashMap<>();
                 eventParams.put("event", "click");
-                eventParams.put("value", "zip code");
+                eventParams.put("value", "settings");
                 FlurryAgent.logEvent("Button clicked for Flurry test", eventParams);
-                break;
-
-            //case to change from F to C or from C to F
-            case R.id.action_settings + 2:
-
-                //get the reference to the sharedPreference
-                SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
-                String fOrC = sharedPreferences.getString(CURRENT_SETTING, "default");
-
-                //if the current settings were set to 'F' change them to 'C' and wise versa
-                if (fOrC.equals("F")) {
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(CURRENT_SETTING, "C");
-                    editor.apply();
-                    String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
-                    presenter.downloadWeatherData(zipCode, "C");
-                    presenter.downloadWeatherDataHourly(zipCode, "C");
-
-                } else {
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString(CURRENT_SETTING, "F");
-                    editor.apply();
-                    String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
-                    presenter.downloadWeatherData(zipCode, "F");
-                    presenter.downloadWeatherDataHourly(zipCode, "F");
-                }
-
-                // answers log
-                Answers.getInstance().logContentView(new ContentViewEvent()
-                        .putContentName("BtnUnitsClicked")
-                        .putContentType("action button clicked")
-                        .putContentId(R.id.action_settings + 2 + "")
-                        .putCustomAttribute("Favorites Count", 20)
-                        .putCustomAttribute("Screen Orientation", "Portrait"));
-
-                //flurry log
-                Map<String, String> eventParams2 = new HashMap<>();
-                eventParams2.put("event", "click");
-                eventParams2.put("value", "ForC");
-                FlurryAgent.logEvent("Button clicked for Flurry test", eventParams2);
-
                 break;
 
         }
@@ -223,7 +132,92 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     }
 
     /**
-     * This method will show custom dialog to enter the zipcode
+     * on activity result
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == SETTINGS_REQUEST) {
+            SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
+            String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
+            if (!globalZipCode.equals(zipCode)) {
+                presenter.downloadWeatherDataHourly(zipCode);
+                presenter.downloadWeatherData(zipCode);
+                globalZipCode = zipCode;
+            } else {
+
+                String fOrC = sharedPreferences.getString(CURRENT_SETTING, "default");
+                if (!globalFOrC.equals(fOrC)) {
+                    weatherDownloadedUpdateUI(weatherInfo);
+                    hourlyWeatherDownloadedUpdateUI(hourlyWeatherInfo);
+                    globalFOrC = fOrC;
+                }
+                globalFOrC = fOrC;
+            }
+
+        }
+    }
+
+    /**
+     * recycler view set up
+     */
+    private void recyclerViewSetUp() {
+        rvDays = (RecyclerView) findViewById(R.id.rvDays);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        RecyclerView.ItemAnimator itemAnimator = new DefaultItemAnimator();
+        rvDays.setLayoutManager(layoutManager);
+        rvDays.setItemAnimator(itemAnimator);
+    }
+
+    /**
+     * configure the initial settings sharedPreference
+     */
+    private void initSharedPreferenceSettings() {
+        SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
+        String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
+
+        //if there was no current settings for temperature make fahrenheit the default
+        if (fahrenheitOrCelsius.equals("default")) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(CURRENT_SETTING, getString(R.string.fahrenheit));
+            editor.apply();
+            globalFOrC = getString(R.string.fahrenheit);
+        }
+        globalFOrC = fahrenheitOrCelsius;
+    }
+
+    /**
+     * set up Flurry
+     */
+    private void setUpFlurry() {
+        new FlurryAgent.Builder()
+                .withLogEnabled(true)
+                .build(this, "CG256N5PW5DKT5F4QD58");
+    }
+
+    /**
+     * presenter set up
+     */
+    private void presenterSetUp() {
+        presenter = new MainActivityPresenter();
+        presenter.attachView(this);
+        presenter.setContext(this);
+
+        SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
+        String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
+        if (zipCode.equals("default")) {
+            showZipCodeDialog("");
+        } else {
+            globalZipCode = zipCode;
+            presenter.downloadWeatherData(zipCode);
+            presenter.downloadWeatherDataHourly(zipCode);
+        }
+
+    }
+
+
+    /**
+     * This method will show custom dialog to enter the zip code
      */
     public void showZipCodeDialog(String error) {
         final Dialog dialog = new Dialog(this);
@@ -243,9 +237,8 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString(ZIP_CODE, zip.getText().toString());
                 editor.apply();
-                String fOrC = sharedPreferences.getString(CURRENT_SETTING, "default");
-                presenter.downloadWeatherData(zip.getText().toString(), fOrC);
-                presenter.downloadWeatherDataHourly(zip.getText().toString(), fOrC);
+                presenter.downloadWeatherData(zip.getText().toString());
+                presenter.downloadWeatherDataHourly(zip.getText().toString());
                 dialog.dismiss();
             }
         });
@@ -257,7 +250,9 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
      * This method will update the toolbar with current weather info
      */
     @Override
-    public void weatherDownloadedUpdateUI(final WeatherInfo weatherInfo, final String fOrC) {
+    public void weatherDownloadedUpdateUI(final WeatherInfo weatherInfo) {
+
+        this.weatherInfo = weatherInfo;
 
         //if weatherInfo is null this means that invalid zip code was entered, so re ask the user
         if (weatherInfo == null || weatherInfo.getCurrentObservation() == null) {
@@ -272,8 +267,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
                 @Override
                 public void run() {
 
+                    SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
+                    String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
+
                     //update the toolbar with current hour weather info
-                    if (fOrC.equals("F")) {
+                    if (fahrenheitOrCelsius.equals(getString(R.string.fahrenheit))) {
                         String temperature = String.valueOf(weatherInfo.getCurrentObservation().getTempF());
                         String temperatureWithDegreeSign = temperature + getString(R.string.degree);
                         tvTemperature.setText(temperatureWithDegreeSign);
@@ -305,40 +303,41 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
      * This method will update the hourly forecast for each day
      */
     @Override
-    public void hourlyWeatherDownloadedUpdateUI(final HourlyWeatherInfo hourlyWeatherInfo, final String fOrC) {
+    public void hourlyWeatherDownloadedUpdateUI(final HourlyWeatherInfo hourlyWeatherInfo) {
 
         if (hourlyWeatherInfo != null && hourlyWeatherInfo.getHourlyForecast() != null) {
+            this.hourlyWeatherInfo = hourlyWeatherInfo;
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     List<HourlyForecast> individualDay = new ArrayList<>();
                     List<DayData> listOfDays = new ArrayList<>();
                     DayData dayData;
-                    while (hourlyWeatherInfo.getHourlyForecast().size() > 0) {
-                        if (Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(0).getFCTTIME().getHour()) < 24 &&
-                                Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(0).getFCTTIME().getHour()) != 0) {
 
-                            individualDay.add(hourlyWeatherInfo.getHourlyForecast().get(0));
-                            hourlyWeatherInfo.getHourlyForecast().remove(0);
+                    for (int i = 0; i < hourlyWeatherInfo.getHourlyForecast().size(); i++) {
+                        if (Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(i).getFCTTIME().getHour()) < 24 &&
+                                Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(i).getFCTTIME().getHour()) != 0) {
 
-                        } else if (Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(0).getFCTTIME().getHour()) == 0) {
+                            individualDay.add(hourlyWeatherInfo.getHourlyForecast().get(i));
+
+                        } else if (Integer.parseInt(hourlyWeatherInfo.getHourlyForecast().get(i).getFCTTIME().getHour()) == 0) {
 
                             dayData = new DayData(individualDay);
                             listOfDays.add(dayData);
                             individualDay = new ArrayList<>();
-                            individualDay.add(hourlyWeatherInfo.getHourlyForecast().get(0));
-                            hourlyWeatherInfo.getHourlyForecast().remove(0);
+                            individualDay.add(hourlyWeatherInfo.getHourlyForecast().get(i));
 
                         }
-
                     }
-                    adapter = new DaysAdapter(listOfDays, getApplicationContext(), fOrC);
+
+                    SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
+                    String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
+                    adapter = new DaysAdapter(listOfDays, getApplicationContext(), fahrenheitOrCelsius);
                     rvDays.setAdapter(adapter);
                     adapter.notifyDataSetChanged();
                 }
             });
         }
-
     }
 }
 
