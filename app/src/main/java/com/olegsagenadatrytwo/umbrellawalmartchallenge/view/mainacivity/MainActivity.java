@@ -140,13 +140,17 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
         if (requestCode == SETTINGS_REQUEST) {
             SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
             String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
+            String fOrC = sharedPreferences.getString(CURRENT_SETTING, "default");
+
+            //if zip code was changed make a API call
             if (!globalZipCode.equals(zipCode)) {
                 presenter.downloadWeatherDataHourly(zipCode);
                 presenter.downloadWeatherData(zipCode);
                 globalZipCode = zipCode;
-            } else {
+                globalFOrC = fOrC;
 
-                String fOrC = sharedPreferences.getString(CURRENT_SETTING, "default");
+            } else { // if zip code was not changed check if the unit was changed
+
                 if (!globalFOrC.equals(fOrC)) {
                     weatherDownloadedUpdateUI(weatherInfo);
                     hourlyWeatherDownloadedUpdateUI(hourlyWeatherInfo);
@@ -235,10 +239,13 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
             public void onClick(View v) {
                 SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
                 SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString(ZIP_CODE, zip.getText().toString());
+                String zipCode = zip.getText().toString();
+
+                editor.putString(ZIP_CODE, zipCode);
                 editor.apply();
-                presenter.downloadWeatherData(zip.getText().toString());
-                presenter.downloadWeatherDataHourly(zip.getText().toString());
+                presenter.downloadWeatherData(zipCode);
+                presenter.downloadWeatherDataHourly(zipCode);
+                globalZipCode = zipCode;
                 dialog.dismiss();
             }
         });
