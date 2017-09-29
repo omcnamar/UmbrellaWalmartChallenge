@@ -1,6 +1,5 @@
 package com.olegsagenadatrytwo.umbrellawalmartchallenge.view.mainacivity;
 
-import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -15,9 +14,6 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -26,6 +22,7 @@ import com.crashlytics.android.answers.Answers;
 import com.crashlytics.android.answers.ContentViewEvent;
 import com.flurry.android.FlurryAgent;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.R;
+import com.olegsagenadatrytwo.umbrellawalmartchallenge.inject.mainactivity.DaggerMainActivityComponent;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.custom.DayData;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfo.WeatherInfo;
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.model.weatherInfoHourly.HourlyForecast;
@@ -36,6 +33,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 import io.fabric.sdk.android.Fabric;
 
@@ -48,7 +47,8 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     private static final int SETTINGS_REQUEST = 1;
 
     //presenter
-    private MainActivityPresenter presenter;
+    @Inject
+    MainActivityPresenter presenter;
 
     //views for toolbar
     private TextView tvTemperature;
@@ -63,15 +63,15 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
     //global weather data variables to avoid API calls
     private WeatherInfo weatherInfo;
     private HourlyWeatherInfo hourlyWeatherInfo;
-    private String globalZipCode;
-    private String globalFOrC;
+    private String globalZipCode = "";
+    private String globalFOrC = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Fabric.with(this, new Answers(), new Crashlytics());
         setContentView(R.layout.activity_main);
-
+        DaggerMainActivityComponent.create().inject(this);
         actionBarSetUp();
         recyclerViewSetUp();
         initSharedPreferenceSettings();
@@ -146,7 +146,6 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
             if (!globalZipCode.equals(zipCode)) {
                 presenter.downloadWeatherDataHourly(zipCode);
                 presenter.downloadWeatherData(zipCode);
-                globalZipCode = zipCode;
                 globalFOrC = fOrC;
 
             } else { // if zip code was not changed check if the unit was changed
@@ -186,8 +185,19 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
             editor.putString(CURRENT_SETTING, getString(R.string.fahrenheit));
             editor.apply();
             globalFOrC = getString(R.string.fahrenheit);
+        }else {
+            globalFOrC = fahrenheitOrCelsius;
         }
-        globalFOrC = fahrenheitOrCelsius;
+
+        String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
+
+        //if there was no current zip code make california mountain view zip cod
+        if (zipCode.equals("default")) {
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString(ZIP_CODE, "94039");
+            editor.apply();
+        }
+
     }
 
     /**
@@ -203,55 +213,21 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
      * presenter set up
      */
     private void presenterSetUp() {
-        presenter = new MainActivityPresenter();
         presenter.attachView(this);
         presenter.setContext(this);
 
         SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
         String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
         if (zipCode.equals("default")) {
-            showZipCodeDialog("");
+            Intent settings = new Intent(this, SettingsActivity.class);
+            startActivityForResult(settings, SETTINGS_REQUEST);
         } else {
-            globalZipCode = zipCode;
             presenter.downloadWeatherData(zipCode);
             presenter.downloadWeatherDataHourly(zipCode);
         }
 
     }
 
-
-    /**
-     * This method will show custom dialog to enter the zip code
-     */
-    public void showZipCodeDialog(String error) {
-        final Dialog dialog = new Dialog(this);
-        dialog.setContentView(R.layout.custom_dialog);
-
-        Button ok = (Button) dialog.findViewById(R.id.btnSubmit);
-        final EditText zip = (EditText) dialog.findViewById(R.id.etZipCode);
-        TextView tvError = (TextView) dialog.findViewById(R.id.tvError);
-        if (!error.equals("")) {
-            tvError.setText(error);
-        }
-        //if button is clicked, close the custom dialog
-        ok.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                String zipCode = zip.getText().toString();
-
-                editor.putString(ZIP_CODE, zipCode);
-                editor.apply();
-                presenter.downloadWeatherData(zipCode);
-                presenter.downloadWeatherDataHourly(zipCode);
-                globalZipCode = zipCode;
-                dialog.dismiss();
-            }
-        });
-        dialog.setCanceledOnTouchOutside(false);
-        dialog.show();
-    }
 
     /**
      * This method will update the toolbar with current weather info
@@ -266,7 +242,11 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
-                    showZipCodeDialog("Not valid Zip code");
+
+                    //take the user to settings to update zip code
+                    Intent settings = new Intent(getApplicationContext(), SettingsActivity.class);
+                    settings.putExtra("error", "invalid zip code");
+                    startActivityForResult(settings, SETTINGS_REQUEST);
                 }
             });
         } else {
@@ -276,6 +256,8 @@ public class MainActivity extends AppCompatActivity implements MainActivityContr
 
                     SharedPreferences sharedPreferences = getSharedPreferences(SETTINGS_PREF_FILE, Context.MODE_PRIVATE);
                     String fahrenheitOrCelsius = sharedPreferences.getString(CURRENT_SETTING, "default");
+                    String zipCode = sharedPreferences.getString(ZIP_CODE, "default");
+                    globalZipCode = zipCode;
 
                     //update the toolbar with current hour weather info
                     if (fahrenheitOrCelsius.equals(getString(R.string.fahrenheit))) {

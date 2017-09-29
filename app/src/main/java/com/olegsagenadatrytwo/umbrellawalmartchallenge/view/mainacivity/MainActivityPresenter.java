@@ -21,7 +21,7 @@ import okhttp3.Response;
  * Created by omcna on 9/28/2017.
  */
 
-class MainActivityPresenter implements MainActivityContract.Presenter {
+public class MainActivityPresenter implements MainActivityContract.Presenter {
 
     private static final String WEATHER_URL = "api.wunderground.com";
     private static final String KEY = "d3e9f2825d24ab13";

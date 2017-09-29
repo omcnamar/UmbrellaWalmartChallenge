@@ -1,7 +1,10 @@
 package com.olegsagenadatrytwo.umbrellawalmartchallenge.view.settingsactivity;
 
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
@@ -12,32 +15,63 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 
 import com.olegsagenadatrytwo.umbrellawalmartchallenge.R;
+import com.olegsagenadatrytwo.umbrellawalmartchallenge.inject.settingsactivity.DaggerSettingsActivityComponent;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 public class SettingsActivity extends AppCompatActivity implements SettingsActivityContract.View {
 
     //constants
     private static final int SETTINGS_REQUEST = 1;
 
-    //presenter and toolbar
-    private SettingsActivityPresenter presenter;
     private Toolbar myToolbar;
 
     //recycler view
     private RecyclerView rvSettings;
     private SettingsAdapter adapter;
 
+    String error;
+
+    //presenter
+    @Inject
+    SettingsActivityPresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
+        DaggerSettingsActivityComponent.create().inject(this);
+
+        //get intent
+        Intent intent = getIntent();
+        error = intent.getStringExtra("error");
+        if(error != null){
+            showError();
+
+        }
 
         actionBarSetUp();
         presenterSetUp();
         recyclerViewSetUp();
+    }
+
+    private void showError() {
+        new AlertDialog.Builder(this)
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .setTitle("Error")
+                .setMessage(error)
+                .setPositiveButton("ok", new DialogInterface.OnClickListener()
+                {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+
+                    }
+
+                })
+                .show();
     }
 
     private void recyclerViewSetUp() {
@@ -59,7 +93,6 @@ public class SettingsActivity extends AppCompatActivity implements SettingsActiv
     }
 
     private void presenterSetUp() {
-        presenter = new SettingsActivityPresenter();
         presenter.attachView(this);
         presenter.setContext(this);
     }

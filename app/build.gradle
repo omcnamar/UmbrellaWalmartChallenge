@@ -58,5 +58,7 @@ dependencies {
     compile 'com.android.support:design:25.3.1'
     compile 'com.github.pwittchen:weathericonview:1.1.0'
     compile 'com.flurry.android:analytics:6.3.1'
+    compile 'com.google.dagger:dagger:2.11'
     testCompile 'junit:junit:4.12'
+    annotationProcessor 'com.google.dagger:dagger-compiler:2.11'
 }
